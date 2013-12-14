@@ -1,3 +1,5 @@
+# template script for accessing flight data.
+
 import csv
 
 def main():

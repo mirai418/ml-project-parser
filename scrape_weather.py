@@ -1,7 +1,10 @@
+# scrapes weather information from wunderground.com and puts it in respective files based on date.
+
 import urllib2
 import csv
 
 def main():
+	path = "../data/weather/"
 	daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 	startYear = 2012
 	years = 2
@@ -12,8 +15,8 @@ def main():
 			daysInMonth[1] = 28
 		for month in xrange(1, 13):
 			for day in xrange(1, daysInMonth[month - 1] + 1):
-				filename = "../data/weather/weather_%d_%d_%d.csv" % (startYear + year, month, day)
-				f = open(filename, 'wb')
+				filename = "weather_%d_%d_%d.csv" % (startYear + year, month, day)
+				f = open(path + filename, 'wb')
 				with f as csvfile:
 					getData(startYear + year, month, day, csvfile)
 				f.close()
