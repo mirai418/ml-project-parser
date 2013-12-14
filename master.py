@@ -6,56 +6,62 @@ import csv
 
 def main():
 	path = "../data/flights_month/"
+	writePath = "../data/compilation/"
 	filenames = createFlightFilenames()
 
-	for filename in filenames:
-		with open(path + filename, 'rb') as csvfile:
-			r = csv.reader(csvfile)
-			r.next()
-			for row in r:
-				dep = row[9]
-				dest = row[14]
-				if (dep == "PIT" or dest == "PIT"):
-					# we will do some pre-analysis feature selection, as many of these fields are either redundant, unnecessary, unhelpful, or cannot replicate in real life
-					featureSelect(row, dep == "PIT")
-					res = addWeather(row)
-					print res
-		break
-
+	with open(writePath + "departures.csv", "wb") as csvfile:
+		wd = csv.writer(csvfile, delimiter=',')
+		with open(writePath + "arrivals.csv", "wb") as csvfile:
+			wa = csv.writer(csvfile, delimiter=',')
+			for filename in filenames:
+				with open(path + filename, 'rb') as csvfile:
+					r = csv.reader(csvfile)
+					r.next()
+					for row in r:
+						dep = row[9]
+						dest = row[14]
+						if (dep == "PIT" or dest == "PIT"):
+							# we will do some pre-analysis feature selection, as many of these fields are either redundant, unnecessary, unhelpful, or cannot replicate in real life
+							featureSelect(row, dep == "PIT")
+							res = addWeather(row)
+							print res
+							if (dep == "PIT"):
+								wd.writerow(res)
+							else:
+								wa.writerow(res)
 
 def stringify(i):
-	if (i < 10):
-		return "0" + str(i)
-	else:
-		return str(i)
+	res = "0" + str(i) if (i < 10) else str(i)
+	return res
 
 def createFlightFilenames():
 	filenames = []
 	for i in xrange(1,13):
-		if (i < 8):
-			year = "13"
-		else:
-			year = "12"
+		year = "13" if i < 8 else "12"
 		month = stringify(i)
 		filename = "20%s_%s.csv" % (year, month)
 		filenames.append(filename)
 	return filenames
 
 def featureSelect(row, dep):
+	try:
 		# obtain flight number through carrier and actual number - want this to be unique
-	row[7] = row[5] + row[7]
-	# col 23 is time block, which ranges from -2 to 12. if diverted, lets add it to block 14
-	if (int(float(row[27])) == 1):
-		row[23] = "14"
-	# col 23 is time block, which ranges from -2 to 12. if cancelled, lets add it to block 13
-	if (int(float(row[25])) == 1):
-		row[23] = "13"
-	if (int(row[23]) < 0):
-		row[23] = "0"
-	# get rid of float... actually this is not used.
-	row[28] = int(float(row[28]))
+		row[7] = row[5] + row[7]
+		# col 23 is time block, which ranges from -2 to 12. if diverted, lets add it to block 14
+		if (int(float(row[27])) == 1):
+			row[23] = "14"
+		# col 23 is time block, which ranges from -2 to 12. if cancelled, lets add it to block 13
+		if (int(float(row[25])) == 1):
+			row[23] = "13"
+		if (int(row[23]) < 0):
+			row[23] = "0"
+		# get rid of float... actually this is not used.
+		row[28] = int(float(row[28]))
+	except Exception, e:
+		pass
 	# some empty stuff... delete
-	del row[46]
+	if (len(row) == 47):
+		del row[46]
 	# not enough data... diverted flights
 	del row[45] # div1 airport id
 	del row[44] # div1 airport
@@ -106,6 +112,7 @@ def addWeather(flightRow):
 	day = flightRow[2]
 	t = flightRow[8]
 	filename = "weather_%s_%s_%s.csv" % (year, month, day)
+	res = None
 
 	with open(path + filename, 'rb') as csvfile:
 		r = csv.reader(csvfile)
@@ -124,8 +131,9 @@ def addWeather(flightRow):
 			else:
 				res = flightRow + curRow
 				return res
-	row.append("hey")
-	return None
+		# last one is min
+		res = flightRow + curRow
+	return res
 
 
 def timeDifference(t, tempTime):
